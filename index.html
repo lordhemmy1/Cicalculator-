@@ -2,19 +2,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Compound Interest Calculator</title>
+    <title>Compound Interest Calculator</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; }
         .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); text-align: center; }
-        .btn { display: inline-block; padding: 15px 25px; font-size: 18px; color: white; background-color: #007BFF; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; }
-        .btn:hover { background-color: #0056b3; }
+        input, button { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ccc; border-radius: 5px; }
+        button { background-color: #007BFF; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
     </style>
+    <script>
+        function calculateInterest() {
+            let principal = parseFloat(document.getElementById("principal").value);
+            let rate = parseFloat(document.getElementById("rate").value) / 100;
+            let time = parseInt(document.getElementById("time").value);if (isNaN(principal) || isNaN(rate) || isNaN(time) || principal <= 0 || rate <= 0 || time <= 0) {
+            alert("Please enter valid values.");
+            return;
+        }
+        
+        let finalAmount = principal * Math.pow(1 + rate, time);
+        document.getElementById("result").innerHTML = "Final Amount: $" + finalAmount.toFixed(2);
+    }
+</script>
+
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to the Compound Interest Calculator</h1>
-        <p>Click the button below to calculate your compound interest.</p>
-        <a href="calculator.php" class="btn">Go to Calculator</a>
-    </div>
+        <h2>Compound Interest Calculator</h2>
+        <label>Principal ($)</label>
+        <input type="number" id="principal" value="1000" required><label>Daily Rate (%)</label>
+    <input type="number" id="rate" step="0.01" value="2.1" required>
+    
+    <label>Time (Days)</label>
+    <input type="number" id="time" value="30" required>
+    
+    <button onclick="calculateInterest()">Calculate</button>
+    
+    <h3 id="result"></h3>
+</div>
+
 </body>
 </html>

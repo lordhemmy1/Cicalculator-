@@ -49,7 +49,7 @@
                 exchangeRates = data.rates;
                 document.getElementById("exchangeRate").innerText = `1 USD = ${exchangeRates.NGN} NGN`;
                 populateCurrencySelectors();
-                fetchHistoricalData();
+                fetchHistoricalData(); // Fetch historical data for the default pair (USD to NGN)
             } catch (error) {
                 console.error("Error fetching exchange rates:", error);
                 document.getElementById("exchangeRate").innerText = "Error fetching rates. Please try again later.";
@@ -80,16 +80,23 @@
             const rate = exchangeRates[toCurrency] / exchangeRates[fromCurrency];
             const convertedAmount = (amount * rate).toFixed(2);
             document.getElementById("result").innerText = `${amount} ${fromCurrency} = ${convertedAmount} ${toCurrency}`;
+            updateExchangeRateDisplay(fromCurrency, toCurrency);
         }
 
-        async function fetchHistoricalData() {
+        function updateExchangeRateDisplay(fromCurrency, toCurrency) {
+            const rate = exchangeRates[toCurrency] / exchangeRates[fromCurrency];
+            document.getElementById("exchangeRate").innerText = `1 ${fromCurrency} = ${rate.toFixed(2)} ${toCurrency}`;
+            fetchHistoricalData(fromCurrency, toCurrency); // Update chart based on selected pair
+        }
+
+        async function fetchHistoricalData(fromCurrency = "USD", toCurrency = "NGN") {
             try {
                 // Fetch historical exchange rates for the last 30 days
-                const historicalUrl = `https://api.exchangerate-api.com/v4/history/USD?start_date=2023-02-01&end_date=2023-03-01`; // Example date range
+                const historicalUrl = `https://api.exchangerate-api.com/v4/history/${fromCurrency}?start_date=2023-02-01&end_date=2023-03-01`; // Example date range
                 const historicalResponse = await fetch(historicalUrl);
                 const historicalData = await historicalResponse.json();
                 const dates = Object.keys(historicalData.rates);
-                const rates = dates.map(date => historicalData.rates[date].NGN);
+                const rates = dates.map(date => historicalData.rates[date][toCurrency]);
                 renderChart(dates, rates);
             } catch (error) {
                 console.error("Error fetching historical data:", error);
@@ -103,7 +110,7 @@
                 data: {
                     labels: dates,
                     datasets: [{
-                        label: "USD to NGN",
+                        label: `Exchange Rate (${dates[0]} to ${rates[0]})`,
                         data: rates,
                         borderColor: "blue",
                         fill: false

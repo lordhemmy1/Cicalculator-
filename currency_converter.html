@@ -23,10 +23,10 @@
                 <input type="number" id="amount" class="form-control" placeholder="Enter amount" required>
             </div>
             <div class="mb-3">
-                <input type="text" id="fromCurrency" class="form-control" placeholder="Enter base currency (e.g., USD)">
+                <select id="fromCurrency" class="form-control" onchange="updateExchangeRate()"></select>
             </div>
             <div class="mb-3">
-                <input type="text" id="toCurrency" class="form-control" placeholder="Enter target currency (e.g., NGN)">
+                <select id="toCurrency" class="form-control" onchange="updateExchangeRate()"></select>
             </div>
             <button class="btn btn-primary w-100" onclick="convertCurrency()">Convert</button>
             <h4 class="mt-3" id="result"></h4>
@@ -39,63 +39,73 @@
     </div>
     
     <script>
-        const realTimeAPI = "https://api.exchangerate.host/latest";
-        const historicalAPI = "https://api.exchangerate.host/timeseries?start_date=2024-03-01&end_date=2024-04-01&base=USD";
+        const apiUrl = "https://api.exchangerate.host/latest?base=USD";
         let exchangeRates = {};
 
-        async function fetchExchangeRates(base = "USD") {
+        async function fetchExchangeRates() {
             try {
-                const response = await fetch(`${realTimeAPI}?base=${base}`);
+                const response = await fetch(apiUrl);
                 const data = await response.json();
-                if (!data.rates) throw new Error("Invalid response from API");
                 exchangeRates = data.rates;
+                populateCurrencySelectors();
                 updateExchangeRate();
-                fetchHistoricalData(base);
+                fetchHistoricalData();
             } catch (error) {
                 console.error("Error fetching exchange rates:", error);
-                document.getElementById("exchangeRate").innerText = "Error fetching rates. Try again later.";
+                document.getElementById("exchangeRate").innerText = "Error fetching rates. Please try again later.";
             }
         }
 
+        function populateCurrencySelectors() {
+            const fromSelect = document.getElementById("fromCurrency");
+            const toSelect = document.getElementById("toCurrency");
+            fromSelect.innerHTML = "";
+            toSelect.innerHTML = "";
+            for (let currency in exchangeRates) {
+                fromSelect.innerHTML += `<option value="${currency}">${currency}</option>`;
+                toSelect.innerHTML += `<option value="${currency}">${currency}</option>`;
+            }
+            fromSelect.value = "USD";
+            toSelect.value = "NGN";
+        }
+
         function updateExchangeRate() {
-            const fromCurrency = document.getElementById("fromCurrency").value.toUpperCase();
-            const toCurrency = document.getElementById("toCurrency").value.toUpperCase();
+            const fromCurrency = document.getElementById("fromCurrency").value;
+            const toCurrency = document.getElementById("toCurrency").value;
             if (exchangeRates[fromCurrency] && exchangeRates[toCurrency]) {
                 const rate = (exchangeRates[toCurrency] / exchangeRates[fromCurrency]).toFixed(4);
                 document.getElementById("exchangeRate").innerText = `1 ${fromCurrency} = ${rate} ${toCurrency}`;
-            } else {
-                document.getElementById("exchangeRate").innerText = "Invalid currency pair!";
             }
         }
 
         function convertCurrency() {
             const amount = document.getElementById("amount").value;
-            const fromCurrency = document.getElementById("fromCurrency").value.toUpperCase();
-            const toCurrency = document.getElementById("toCurrency").value.toUpperCase();
+            const fromCurrency = document.getElementById("fromCurrency").value;
+            const toCurrency = document.getElementById("toCurrency").value;
             if (!amount || amount <= 0) {
                 alert("Please enter a valid amount.");
                 return;
             }
-            if (exchangeRates[fromCurrency] && exchangeRates[toCurrency]) {
-                const rate = exchangeRates[toCurrency] / exchangeRates[fromCurrency];
-                const convertedAmount = (amount * rate).toFixed(2);
-                document.getElementById("result").innerText = `${amount} ${fromCurrency} = ${convertedAmount} ${toCurrency}`;
-            } else {
-                document.getElementById("result").innerText = "Invalid currency pair!";
-            }
+            const rate = exchangeRates[toCurrency] / exchangeRates[fromCurrency];
+            const convertedAmount = (amount * rate).toFixed(2);
+            document.getElementById("result").innerText = `${amount} ${fromCurrency} = ${convertedAmount} ${toCurrency}`;
         }
 
-        async function fetchHistoricalData(base = "USD") {
+        async function fetchHistoricalData() {
             try {
-                const response = await fetch(`${historicalAPI}&base=${base}`);
+                const today = new Date();
+                const startDate = new Date();
+                startDate.setDate(today.getDate() - 30);
+                const formattedStartDate = startDate.toISOString().split('T')[0];
+                const formattedEndDate = today.toISOString().split('T')[0];
+
+                const historicalUrl = `https://api.exchangerate.host/timeseries?start_date=${formattedStartDate}&end_date=${formattedEndDate}&base=USD`;
+                const response = await fetch(historicalUrl);
                 const data = await response.json();
-                if (!data.rates) {
-                    console.error("No historical data found.");
-                    return;
-                }
+                
                 const dates = Object.keys(data.rates);
-                const toCurrency = document.getElementById("toCurrency").value.toUpperCase();
-                const rates = dates.map(date => data.rates[date][toCurrency] || 0);
+                const rates = dates.map(date => data.rates[date].NGN);
+
                 renderChart(dates, rates);
             } catch (error) {
                 console.error("Error fetching historical data:", error);
@@ -109,7 +119,7 @@
                 data: {
                     labels: dates,
                     datasets: [{
-                        label: "Exchange Rate Trends",
+                        label: "USD to NGN",
                         data: rates,
                         borderColor: "blue",
                         fill: false

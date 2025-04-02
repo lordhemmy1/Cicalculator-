@@ -6,8 +6,21 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background-color: #e3f2fd; height: 100vh; width: 100vw; display: flex flex-direction: column;}
-        .container { max-width: 900px; margin-top: 20px; }
+        body { 
+            background-color: #e3f2fd; 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh; 
+            margin: 0;
+        }
+        .container { 
+            flex-grow: 1; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            width: 100vw;
+        }
         .exchange-rate { font-size: 24px; font-weight: bold; color: #1565c0; }
         .card { border-radius: 10px; }
         .rate-card { background: linear-gradient(135deg, #42a5f5, #1e88e5); color: white; }
@@ -20,49 +33,20 @@
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
+            width: 100%;
         }
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-        }
-        .nav-menu {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-        .nav-link {
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        .nav-link:hover {
-            text-decoration: underline;
-        }
-
+        .logo { font-size: 24px; font-weight: bold; }
+        .nav-menu { display: flex; gap: 20px; flex-wrap: wrap; }
+        .nav-link { color: white; text-decoration: none; font-weight: bold; }
+        .nav-link:hover { text-decoration: underline; }
         .footer {
             text-align: center;
             padding: 20px;
-            margin-top: auto;
             background: linear-gradient(to right, black, red);
             color: white;
+            width: 100%;
         }
-        @media (max-width: 768px) {
-            .header {
-                flex-direction: column;
-                align-items: center;
-                text-align: center;
-            }
-            .nav-menu {
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
-            }
-            .container {
-                width: 90%;
-                padding: 10px;
-            }
-        }
-        </style>
+    </style>
 </head>
 <body>
     <div class="header">
@@ -90,13 +74,12 @@
             <h4 class="text-dark">Exchange Rate Trends</h4>
             <canvas id="exchangeChart"></canvas>
         </div>
-    </div><script>
-    const apiUrl = "https://api.exchangerate-api.com/v4/latest/USD";
-    let exchangeRates = {};
-    let currencyGroups = [];
-    let currentGroupIndex = 0;
-
-    async function fetchExchangeRates() {
+    </div>
+    <script>
+        const apiUrl = "https://api.exchangerate-api.com/v4/latest/USD";
+        let exchangeRates = {};
+        let currencyGroups = [];
+        let currentGroupIndex = 0;async function fetchExchangeRates() {
         try {
             const response = await fetch(apiUrl);
             const data = await response.json();
@@ -163,44 +146,11 @@
         const toCurrency = document.getElementById("toCurrency").value;
         const rate = (exchangeRates[toCurrency] / exchangeRates[fromCurrency]).toFixed(4);
         document.getElementById("exchangeRate").innerText = `1 ${fromCurrency} = ${rate} ${toCurrency}`;
-        fetchHistoricalData(fromCurrency, toCurrency);
     }
-
-    async function fetchHistoricalData(base, target) {
-        try {
-            const historicalUrl = `https://api.exchangerate-api.com/v4/latest/${base}`;
-            const response = await fetch(historicalUrl);
-            const data = await response.json();
-            const rates = Object.entries(data.rates).slice(-30).map(([date, rate]) => ({ date, rate: rate[target] }));
-            renderChart(rates.map(r => r.date), rates.map(r => r.rate), base, target);
-        } catch (error) {
-            console.error("Error fetching historical data:", error);
-        }
-    }
-
-    function renderChart(dates, rates, base, target) {
-        const ctx = document.getElementById("exchangeChart").getContext("2d");
-        new Chart(ctx, {
-            type: "line",
-            data: {
-                labels: dates,
-                datasets: [{
-                    label: `${base} to ${target}`,
-                    data: rates,
-                    borderColor: "#1e88e5",
-                    fill: false
-                }]
-            }
-        });
-    }
-
-    document.getElementById("fromCurrency").addEventListener("change", updateExchangeRate);
-    document.getElementById("toCurrency").addEventListener("change", updateExchangeRate);
     fetchExchangeRates();
 </script>
-
-    <div class="footer">&copy; 2025 PCEX - Designed by Lordhemmy</div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<div class="footer">&copy; 2025 PCEX - Designed by Lordhemmy</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>

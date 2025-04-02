@@ -1,164 +1,130 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Currency Exchange</title>
+    <title>Live Exchange Rate Tracker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body {
-            background-color: #f5f7fa;
-        }
-        .card {
-            border-radius: 15px;
-            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            background: linear-gradient(90deg, #007bff, #6610f2);
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-        }
-        .exchange-rate {
-            font-size: 20px;
-            font-weight: bold;
-            color: #28a745;
-        }
+        body { background-color: #e3f2fd; }
+        .container { max-width: 900px; margin-top: 20px; }
+        .exchange-rate { font-size: 24px; font-weight: bold; color: #1565c0; }
+        .card { border-radius: 10px; }
+        .rate-card { background: linear-gradient(135deg, #42a5f5, #1e88e5); color: white; }
+        .btn-primary { background-color: #1e88e5; border: none; }
     </style>
 </head>
 <body>
-    <div class="container mt-4">
-        <div class="header text-center">
-            <h2>Live Currency Exchange Tracker</h2>
-        </div>
-
-        <!-- Live Exchange Rates -->
-        <div class="row mt-4" id="exchangeRates">
-            <!-- Rates will be dynamically inserted here -->
-        </div>
-
-        <!-- Currency Converter -->
-        <div class="card p-4 mt-3">
-            <h4 class="text-center text-primary">Currency Converter</h4>
-            <input type="number" id="amount" class="form-control mb-3" placeholder="Enter amount" required>
-            <select id="fromCurrency" class="form-control mb-3"></select>
-            <select id="toCurrency" class="form-control mb-3"></select>
-            <button class="btn btn-success w-100" onclick="convertCurrency()">Convert</button>
-            <h4 class="mt-3 text-center" id="result"></h4>
-        </div>
-
-        <!-- Exchange Rate Trends -->
-        <div class="card p-4 mt-3">
-            <h4 class="text-center text-danger">Exchange Rate Trends</h4>
-            <canvas id="exchangeChart"></canvas>
-        </div>
+    <div class="container text-center">
+        <h2 class="text-primary">Live Exchange Rate Tracker</h2>
+        <p class="exchange-rate" id="exchangeRate">Loading...</p>
+        <div class="row row-cols-3 g-3" id="exchangeRates"></div><div class="card p-4 mt-4 shadow-sm">
+        <h4 class="text-dark">Currency Converter</h4>
+        <input type="number" id="amount" class="form-control mb-3" placeholder="Enter amount" required>
+        <select id="fromCurrency" class="form-control mb-3"></select>
+        <select id="toCurrency" class="form-control mb-3"></select>
+        <button class="btn btn-primary w-100" onclick="convertCurrency()">Convert</button>
+        <h4 class="mt-3 text-success" id="result"></h4>
     </div>
+    
+    <div class="card p-4 mt-4 shadow-sm">
+        <h4 class="text-dark">Exchange Rate Trends</h4>
+        <canvas id="exchangeChart"></canvas>
+    </div>
+</div>
 
-    <script>
-        const apiUrl = "https://api.exchangerate-api.com/v4/latest/USD";
-        let exchangeRates = {};
+<script>
+    const apiUrl = "https://api.exchangerate-api.com/v4/latest/USD";
+    let exchangeRates = {};
 
-        async function fetchExchangeRates() {
-            try {
-                const response = await fetch(apiUrl);
-                const data = await response.json();
-                exchangeRates = data.rates;
-                displayLiveRates();
-                populateCurrencySelectors();
-                updateExchangeRate();
-            } catch (error) {
-                console.error("Error fetching exchange rates:", error);
-            }
-        }
-
-        function displayLiveRates() {
-            const currencies = Object.keys(exchangeRates).slice(0, 6);
-            const exchangeRatesDiv = document.getElementById("exchangeRates");
-            exchangeRatesDiv.innerHTML = "";
-            currencies.forEach(currency => {
-                exchangeRatesDiv.innerHTML += `
-                    <div class='col-md-2'>
-                        <div class='card text-center p-3 bg-light'>
-                            <h5 class="text-primary">${currency}</h5>
-                            <p class="exchange-rate">${exchangeRates[currency].toFixed(2)}</p>
-                        </div>
-                    </div>`;
-            });
-        }
-
-        function populateCurrencySelectors() {
-            const fromSelect = document.getElementById("fromCurrency");
-            const toSelect = document.getElementById("toCurrency");
-            fromSelect.innerHTML = toSelect.innerHTML = "";
-            for (let currency in exchangeRates) {
-                fromSelect.innerHTML += `<option value="${currency}">${currency}</option>`;
-                toSelect.innerHTML += `<option value="${currency}">${currency}</option>`;
-            }
-            fromSelect.value = "USD";
-            toSelect.value = "NGN";
-        }
-
-        function convertCurrency() {
-            const amount = document.getElementById("amount").value;
-            const fromCurrency = document.getElementById("fromCurrency").value;
-            const toCurrency = document.getElementById("toCurrency").value;
-            if (!amount || amount <= 0) {
-                alert("Please enter a valid amount.");
-                return;
-            }
-            const rate = exchangeRates[toCurrency] / exchangeRates[fromCurrency];
-            const convertedAmount = (amount * rate).toFixed(2);
-            document.getElementById("result").innerText = `${amount} ${fromCurrency} = ${convertedAmount} ${toCurrency}`;
+    async function fetchExchangeRates() {
+        try {
+            const response = await fetch(apiUrl);
+            const data = await response.json();
+            exchangeRates = data.rates;
+            displayLiveRates();
+            populateCurrencySelectors();
             updateExchangeRate();
+        } catch (error) {
+            console.error("Error fetching exchange rates:", error);
         }
+    }
 
-        function updateExchangeRate() {
-            const fromCurrency = document.getElementById("fromCurrency").value;
-            const toCurrency = document.getElementById("toCurrency").value;
-            document.getElementById("exchangeRates").innerHTML = `
-                <div class='col-md-12'>
-                    <div class='card text-center p-3 bg-warning'>
-                        <h5>${fromCurrency} to ${toCurrency}</h5>
-                        <p class="exchange-rate">1 ${fromCurrency} = ${exchangeRates[toCurrency].toFixed(2)} ${toCurrency}</p>
-                    </div>
-                </div>`;
-            fetchHistoricalData(fromCurrency, toCurrency);
+    function displayLiveRates() {
+        const currencies = Object.keys(exchangeRates).slice(0, 6);
+        const exchangeRatesDiv = document.getElementById("exchangeRates");
+        exchangeRatesDiv.innerHTML = "";
+        currencies.forEach(currency => {
+            exchangeRatesDiv.innerHTML += `<div class='col'><div class='card rate-card p-3 shadow-sm'><h5>${currency}</h5><p>1 USD = ${exchangeRates[currency]}</p></div></div>`;
+        });
+    }
+
+    function populateCurrencySelectors() {
+        const fromSelect = document.getElementById("fromCurrency");
+        const toSelect = document.getElementById("toCurrency");
+        fromSelect.innerHTML = toSelect.innerHTML = "";
+        for (let currency in exchangeRates) {
+            fromSelect.innerHTML += `<option value="${currency}">${currency}</option>`;
+            toSelect.innerHTML += `<option value="${currency}">${currency}</option>`;
         }
+        fromSelect.value = "USD";
+        toSelect.value = "NGN";
+    }
 
-        async function fetchHistoricalData(base, target) {
-            try {
-                const historicalUrl = `https://api.exchangerate-api.com/v4/history/${base}`;
-                const response = await fetch(historicalUrl);
-                const data = await response.json();
-                const dates = Object.keys(data.rates);
-                const rates = dates.map(date => data.rates[date][target]);
-                renderChart(dates, rates, base, target);
-            } catch (error) {
-                console.error("Error fetching historical data:", error);
+    function convertCurrency() {
+        const amount = document.getElementById("amount").value;
+        const fromCurrency = document.getElementById("fromCurrency").value;
+        const toCurrency = document.getElementById("toCurrency").value;
+        if (!amount || amount <= 0) {
+            alert("Please enter a valid amount.");
+            return;
+        }
+        const rate = exchangeRates[toCurrency] / exchangeRates[fromCurrency];
+        const convertedAmount = (amount * rate).toFixed(2);
+        document.getElementById("result").innerText = `${amount} ${fromCurrency} = ${convertedAmount} ${toCurrency}`;
+        updateExchangeRate();
+    }
+
+    function updateExchangeRate() {
+        const fromCurrency = document.getElementById("fromCurrency").value;
+        const toCurrency = document.getElementById("toCurrency").value;
+        const rate = (exchangeRates[toCurrency] / exchangeRates[fromCurrency]).toFixed(4);
+        document.getElementById("exchangeRate").innerText = `1 ${fromCurrency} = ${rate} ${toCurrency}`;
+        fetchHistoricalData(fromCurrency, toCurrency);
+    }
+
+    async function fetchHistoricalData(base, target) {
+        try {
+            const historicalUrl = `https://api.exchangerate-api.com/v4/latest/${base}`;
+            const response = await fetch(historicalUrl);
+            const data = await response.json();
+            const rates = Object.entries(data.rates).slice(-30).map(([date, rate]) => ({ date, rate: rate[target] }));
+            renderChart(rates.map(r => r.date), rates.map(r => r.rate), base, target);
+        } catch (error) {
+            console.error("Error fetching historical data:", error);
+        }
+    }
+
+    function renderChart(dates, rates, base, target) {
+        const ctx = document.getElementById("exchangeChart").getContext("2d");
+        new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: `${base} to ${target}`,
+                    data: rates,
+                    borderColor: "#1e88e5",
+                    fill: false
+                }]
             }
-        }
+        });
+    }
 
-        function renderChart(dates, rates, base, target) {
-            const ctx = document.getElementById("exchangeChart").getContext("2d");
-            new Chart(ctx, {
-                type: "line",
-                data: {
-                    labels: dates,
-                    datasets: [{
-                        label: `${base} to ${target}`,
-                        data: rates,
-                        borderColor: "blue",
-                        backgroundColor: "rgba(0, 123, 255, 0.2)",
-                        fill: true
-                    }]
-                }
-            });
-        }
+    document.getElementById("fromCurrency").addEventListener("change", updateExchangeRate);
+    document.getElementById("toCurrency").addEventListener("change", updateExchangeRate);
+    fetchExchangeRates();
+</script>
 
-        document.getElementById("fromCurrency").addEventListener("change", updateExchangeRate);
-        document.getElementById("toCurrency").addEventListener("change", updateExchangeRate);
-        fetchExchangeRates();
-    </script>
 </body>
 </html>

@@ -2,19 +2,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Currency Exchange Rate Tracker</title>
+    <title>Live Exchange Rate Tracker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { background-color: #f8f9fa; }
-        .container { max-width: 900px; margin-top: 20px; }
-        .exchange-rate { font-size: 20px; font-weight: bold; margin-bottom: 10px; }
+        .container { max-width: 800px; margin-top: 20px; }
+        .exchange-rate { font-size: 24px; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="container text-center">
         <h2>Live Exchange Rate Tracker</h2>
-        <div id="exchangeRates" class="row row-cols-2 row-cols-md-3 g-3"></div><div class="card p-4 mt-3">
+        <p class="exchange-rate" id="exchangeRate">Loading...</p>
+        <div class="row" id="exchangeRates"></div><div class="card p-4 mt-3">
         <h4>Currency Converter</h4>
         <input type="number" id="amount" class="form-control mb-3" placeholder="Enter amount" required>
         <select id="fromCurrency" class="form-control mb-3"></select>
@@ -51,7 +52,7 @@
         const exchangeRatesDiv = document.getElementById("exchangeRates");
         exchangeRatesDiv.innerHTML = "";
         currencies.forEach(currency => {
-            exchangeRatesDiv.innerHTML += `<div class='col'><div class='card p-3'><h5>${currency}</h5><p>${exchangeRates[currency]}</p></div></div>`;
+            exchangeRatesDiv.innerHTML += `<div class='col'><div class='card p-3'><h5>${currency}</h5><p>1 USD = ${exchangeRates[currency]}</p></div></div>`;
         });
     }
 
@@ -84,18 +85,18 @@
     function updateExchangeRate() {
         const fromCurrency = document.getElementById("fromCurrency").value;
         const toCurrency = document.getElementById("toCurrency").value;
-        document.getElementById("exchangeRates").innerHTML = `<div class='col'><div class='card p-3'><h5>${fromCurrency} to ${toCurrency}</h5><p>1 ${fromCurrency} = ${exchangeRates[toCurrency]} ${toCurrency}</p></div></div>`;
+        const rate = (exchangeRates[toCurrency] / exchangeRates[fromCurrency]).toFixed(4);
+        document.getElementById("exchangeRate").innerText = `1 ${fromCurrency} = ${rate} ${toCurrency}`;
         fetchHistoricalData(fromCurrency, toCurrency);
     }
 
     async function fetchHistoricalData(base, target) {
         try {
-            const historicalUrl = `https://api.exchangerate-api.com/v4/history/${base}`;
+            const historicalUrl = `https://api.exchangerate-api.com/v4/latest/${base}`;
             const response = await fetch(historicalUrl);
             const data = await response.json();
-            const dates = Object.keys(data.rates);
-            const rates = dates.map(date => data.rates[date][target]);
-            renderChart(dates, rates, base, target);
+            const rates = Object.entries(data.rates).slice(-30).map(([date, rate]) => ({ date, rate: rate[target] }));
+            renderChart(rates.map(r => r.date), rates.map(r => r.rate), base, target);
         } catch (error) {
             console.error("Error fetching historical data:", error);
         }
